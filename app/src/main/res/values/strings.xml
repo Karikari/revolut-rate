@@ -1,0 +1,8 @@
+<resources>
+    <string name="action_settings">Settings</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="code">Code</string>
+    <string name="name">Name</string>
+    <string name="hundred">100</string>
+    <string name="rates">Rates</string>
+</resources>

@@ -1,0 +1,80 @@
+apply plugin: 'com.android.application'
+
+apply plugin: 'kotlin-android'
+
+apply plugin: 'kotlin-android-extensions'
+
+android {
+    compileSdkVersion 29
+
+    ext {
+        appVersionName = 'v1.0'
+        appPackageId = "com.revolut.rates"
+    }
+
+    defaultConfig {
+        applicationId "$appPackageId"
+        minSdkVersion 19
+        targetSdkVersion 29
+        versionCode 1
+        versionName "$appVersionName"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    flavorDimensions "versionCode"
+
+    productFlavors {
+        production {
+            applicationId "$appPackageId"
+            resValue("string", "app_name", "Revolut-Rates")
+            versionName "$appVersionName"
+            buildConfigField "String", "BASE_URL", "\"https://revolut.duckdns.org/\""
+
+        }
+
+        /*demo {
+            applicationId "$appPackageId" + ".test"
+            resValue("string", "app_name", "Rates Test")
+            versionName "$appVersionName" + "-Test"
+            buildConfigField "String", "BASE_URL", "\"https://api-test.genki.guide/\""
+        }*/
+
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+
+    def retrofit_version = "2.3.0"
+
+
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'androidx.core:core-ktx:1.0.2'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation 'com.google.android.material:material:1.0.0'
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+    implementation 'androidx.navigation:navigation-fragment-ktx:2.0.0'
+    implementation 'androidx.navigation:navigation-ui-ktx:2.0.0'
+
+    implementation 'com.google.code.gson:gson:2.8.5'
+    implementation "com.squareup.retrofit2:retrofit:$retrofit_version"
+    implementation "com.squareup.retrofit2:converter-scalars:$retrofit_version"
+    implementation "com.squareup.retrofit2:converter-gson:$retrofit_version"
+
+    implementation 'de.hdodenhof:circleimageview:3.0.1'
+
+}
