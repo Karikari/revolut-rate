@@ -20,16 +20,34 @@ android {
         versionName "$appVersionName"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    signingConfigs {
+        release {
+            storeFile file("../revolutKeyStore.jks")
+            storePassword "rev4321"
+            keyAlias "revolut_key"
+            keyPassword "rev1234"
+            v2SigningEnabled false
+        }
+
+        debug {
+
+        }
+    }
+
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
 
     flavorDimensions "versionCode"
 
     productFlavors {
+
         production {
             applicationId "$appPackageId"
             resValue("string", "app_name", "Revolut-Rates")
@@ -37,13 +55,6 @@ android {
             buildConfigField "String", "BASE_URL", "\"https://revolut.duckdns.org/\""
 
         }
-
-        /*demo {
-            applicationId "$appPackageId" + ".test"
-            resValue("string", "app_name", "Rates Test")
-            versionName "$appVersionName" + "-Test"
-            buildConfigField "String", "BASE_URL", "\"https://api-test.genki.guide/\""
-        }*/
 
     }
     compileOptions {

@@ -136,7 +136,6 @@ class RateADP(rates: ArrayList<RateMDL>) : RecyclerView.Adapter<RateADP.ViewHold
                    Log.e(TAG, "Exception 11 ${ex.message}")
                 }
 
-
             }
 
             if(adapterPosition == 0){

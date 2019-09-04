@@ -54,13 +54,8 @@ class HomeFragment : Fragment(), keyboardListener {
     var countries = hashMapOf<String, Country>()
 
     var rates = hashMapOf<String, Any>()
-    var updated_recorded = ArrayList<RateMDL>()
 
     var mAdapter = RateADP(records)
-
-    init {
-
-    }
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,7 +86,6 @@ class HomeFragment : Fragment(), keyboardListener {
         }
 
         runTimer()
-
 
     }
 
@@ -158,7 +152,6 @@ class HomeFragment : Fragment(), keyboardListener {
         req.rates.enqueue(object : Callback<ResData> {
 
             override fun onFailure(call: Call<ResData>, t: Throwable) {
-
             }
 
             override fun onResponse(call: Call<ResData>, response: Response<ResData>) {
