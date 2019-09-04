@@ -1,6 +1,6 @@
 package com.revolut.rates.adapters
 
-import android.content.Context
+import android.os.Handler
 import android.text.Editable
 import android.text.TextUtils
 import android.text.TextWatcher
@@ -8,39 +8,35 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.InputMethodManager
+import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.textfield.TextInputEditText
 import com.revolut.rates.R
+import com.revolut.rates.RateApplication
+import com.revolut.rates.interfaces.keyboardListener
 import com.revolut.rates.models.RateMDL
 import com.revolut.rates.settings.PrefManager
 import com.revolut.rates.settings.UtilsManager
 import kotlinx.android.synthetic.main.row_item.view.*
 import java.util.*
-import android.view.View.OnFocusChangeListener
-import androidx.cardview.widget.CardView
-import com.google.android.material.textfield.TextInputEditText
 
 
-class RateADP(ctx: Context, rates: List<RateMDL>, recyclerView: RecyclerView) :
-    RecyclerView.Adapter<RateADP.ViewHolder>() {
+class RateADP(rates: ArrayList<RateMDL>) : RecyclerView.Adapter<RateADP.ViewHolder>() {
 
-
-    private var rates = listOf<RateMDL>()
-    private var context: Context
-    private var recyclerView: RecyclerView
-    private var prefs : PrefManager? = null
+    private var rates = mutableListOf<RateMDL>()
+    private var prefs: PrefManager? = null
+    private var mRecyclerView : RecyclerView? = null
+    private var keyboardListener : keyboardListener? = null;
 
     companion object {
         private val TAG = RateADP::class.java.simpleName
     }
 
     init {
-        this.context = ctx
         this.rates = rates
-        this.recyclerView = recyclerView
-        this.prefs = PrefManager(context)
-    }
+        this.prefs = PrefManager(RateApplication.getContext())
 
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.row_item, parent, false)
@@ -48,7 +44,6 @@ class RateADP(ctx: Context, rates: List<RateMDL>, recyclerView: RecyclerView) :
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.setIsRecyclable(false)
         holder.onBindView(position)
     }
 
@@ -62,105 +57,130 @@ class RateADP(ctx: Context, rates: List<RateMDL>, recyclerView: RecyclerView) :
         } else this.rates[position]
     }
 
+    fun addRecycler(recyclerView: RecyclerView, keyboardListener: keyboardListener){
+        this.mRecyclerView = recyclerView;
+        this.keyboardListener = keyboardListener;
+    }
+
+    fun updateRates(new_rates: HashMap<String, Any>) {
+        val handler = Handler()
+         handler.post({
+             for(i in rates){
+                 try {
+                     i.rates = new_rates.get(i.code) as Double
+                 } catch (e: Exception) {
+                 }
+             }
+             notifyDataSetChanged()
+         })
+
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        return position
+    }
+
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
 
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view), View.OnClickListener {
 
         var editText: TextInputEditText? = null
-        var cardView : CardView? = null
+        var cardView: CardView? = null
+        var textListener: TextInputChangeListener? = null
 
         init {
-            context.let {
-                view.setOnClickListener(this)
-                editText = itemView.findViewById(R.id.mAmount) as TextInputEditText
-                cardView = itemView.findViewById(R.id.cardView) as CardView
-            }
-
+            view.setOnClickListener(this)
+            editText = itemView.findViewById(R.id.mAmount) as TextInputEditText
+            cardView = itemView.findViewById(R.id.cardView) as CardView
+            textListener = TextInputChangeListener()
         }
 
         override fun onClick(p0: View?) {
-           swap()
-
+            swap()
         }
 
         fun onBindView(position: Int) {
 
             val rateMDL = getItem(position)
             if (rateMDL != null) {
-                Log.d(TAG, "Position ${position}")
                 itemView.mCode.text = rateMDL.code
                 itemView.mCurrency.text = rateMDL.name.capitalizeWords()
 
-                var image_name = rateMDL.code.toLowerCase()+".png"
-                if(TextUtils.equals(image_name, "try.png")){
+                var image_name = rateMDL.code.toLowerCase() + ".png"
+                if (TextUtils.equals(image_name, "try.png")) {
                     image_name = "tr_y.png"
                 }
                 itemView.mImage.setImageDrawable(UtilsManager.getImage(image_name))
 
+
                 try {
-                    var amount = prefs!!.getAmount().toDouble()
+                    val amount = prefs!!.getAmount().toDouble()
 
-                    if(adapterPosition!=0){
-                        amount = rateMDL.rates * amount
-                        editText!!.text = Editable.Factory.getInstance().newEditable(UtilsManager.formatCurrency(amount))
+                    if (position != 0) {
+                        val amount_rate = rateMDL.rates * amount
+                        editText!!.text = Editable.Factory.getInstance().newEditable(UtilsManager.formatCurrency(amount_rate))
+                        rateMDL.changeValue = amount_rate.toString()
                     }else{
+                        editText!!.addTextChangedListener(textListener)
                         editText!!.text = Editable.Factory.getInstance().newEditable(UtilsManager.formatCurrency(amount))
                     }
+
                 } catch (e: NumberFormatException) {
-                    Log.e(TAG, "Exception ${e.message}")
-                } catch (ex: Exception){
-                    Log.e(TAG, "Exception ${ex.message}")
+                    Log.e(TAG, "NumberFormatException ${e.message}")
+                    editText!!.text = Editable.Factory.getInstance().newEditable("0")
+
+                } catch (ex: Exception) {
+                   Log.e(TAG, "Exception 11 ${ex.message}")
                 }
 
 
-                editText!!.addTextChangedListener(object : TextWatcher {
+            }
 
-                    override fun afterTextChanged(p0: Editable?) {
-                    }
-
-                    override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                    }
-
-                    override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
-                        Log.d(TAG, "Text ==> ${p0.toString()}")
-                        val number = p0.toString().replace(",", ".")
-                        prefs!!.setAmount(number)
-
-                        notifyDataSetChanged()
-                    }
-                })
-
-
-                editText!!.setOnFocusChangeListener(OnFocusChangeListener { v, hasFocus ->
-                   Log.d(TAG, "HAS FOCUS $hasFocus Position $adapterPosition  ${editText!!.length()}")
-                    editText!!.setSelection(editText!!.length())
-                })
-
-                if(adapterPosition!=0){
-                    cardView!!.setOnClickListener {
-                        swap()
-                    }
-                }
-
+            if(adapterPosition == 0){
+                editText!!.requestFocus()
+                editText!!.setSelection(editText!!.length())
             }
 
         }
 
-        fun swap(){
-            Collections.swap(rates, adapterPosition, 0)
-            notifyItemMoved(adapterPosition, 0)
-            recyclerView.scrollToPosition(0)
-            editText!!.requestFocus()
+        fun swap() {
+            try {
+                Collections.swap(rates, adapterPosition, 0)
+                notifyItemMoved(adapterPosition, 0)
+                mRecyclerView!!.scrollToPosition(0)
 
-            context.let {
-                val imm = it.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager?
-                imm!!.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
+                prefs!!.setAmount(getItem(0)!!.changeValue)
+
+                keyboardListener!!.onSendData(editText)
+
+            } catch (e: Exception) {
             }
         }
-
 
         fun String.capitalizeWords(): String = split(" ").map { it.capitalize() }.joinToString(" ")
 
+    }
 
+    inner class TextInputChangeListener : TextWatcher {
+
+        override fun afterTextChanged(p0: Editable?) {
+        }
+
+        override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+        }
+
+        override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+            //Log.d(TAG, "Text ==> ${p0.toString()}")
+            val number = p0.toString().replace(",", ".")
+            prefs!!.setAmount(number)
+
+            try {
+                notifyDataSetChanged()
+            } catch (e: Exception) {
+            }
+        }
     }
 }
